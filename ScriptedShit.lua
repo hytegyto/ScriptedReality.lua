@@ -430,18 +430,32 @@
 
 
 
+--[[
+    @prometheus-config {
+        "Virtualize": true,
+        "EncryptStrings": true,
+        "Compress": true,
+        "AntiTamper": true
+    }
+]]
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
 -- ==========================================
--- GLOBALS & CONFIG
+-- DEFAULT SETTINGS
 -- ==========================================
 _G.ROBUX_AMMOUNT = 14383822
 _G.FAKE_NAME = "filteredasync"
 _G.FAKE_ROLE = "TOP 22"
 _G.ROLE_COLORBG = Color3.fromRGB(235, 235, 0)
+_G.RAINBOW_ENABLED = false
 
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local TS = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+local FILE_NAME = "MBH_Settings.json"
 
 local Colors = {
     ["red"] = Color3.fromRGB(255, 50, 50),
@@ -449,45 +463,63 @@ local Colors = {
     ["blue"] = Color3.fromRGB(50, 150, 255),
     ["pink"] = Color3.fromRGB(255, 100, 255),
     ["purple"] = Color3.fromRGB(150, 50, 255),
-    ["orange"] = Color3.fromRGB(255, 150, 50),
+    ["orange"] = Color3.fromRGB(255, 120, 0),
     ["yellow"] = Color3.fromRGB(255, 255, 50),
     ["gold"] = Color3.fromRGB(235, 235, 0),
-    ["white"] = Color3.fromRGB(255, 255, 255),
     ["cyan"] = Color3.fromRGB(0, 255, 255)
 }
 
 -- ==========================================
--- REFRESH LOGIC (THE FIX)
+-- SAVE / LOAD LOGIC (MEMORY)
 -- ==========================================
-function _G.UpdateFakeDonation()
-    -- 1. Update Character Tags
-    local character = LocalPlayer.Character or workspace:FindFirstChild(LocalPlayer.Name)
-    if character then
-        local head = character:FindFirstChild("Head")
-        local headtag = head and head:FindFirstChild("HeadTag")
-        if headtag then
-            local display = headtag:FindFirstChild("Display")
-            if display then display.Text = _G.FAKE_NAME end
-            
-            local roleLabel = headtag:FindFirstChild("Role")
-            if roleLabel then 
-                roleLabel.Text = _G.FAKE_ROLE
-                roleLabel.BackgroundColor3 = _G.ROLE_COLORBG
-            end
-        end
+local function SaveSettings()
+    local data = {
+        Robux = _G.ROBUX_AMMOUNT,
+        Name = _G.FAKE_NAME,
+        Role = _G.FAKE_ROLE,
+        Color = {R = _G.ROLE_COLORBG.R, G = _G.ROLE_COLORBG.G, B = _G.ROLE_COLORBG.B},
+        Rainbow = _G.RAINBOW_ENABLED
+    }
+    -- This saves to your exploit's workspace folder
+    if writefile then
+        writefile(FILE_NAME, HttpService:JSONEncode(data))
     end
+end
 
-    -- 2. Update Robux Prompt
-    local prompt = LocalPlayer.PlayerGui:FindFirstChild("CustomBuyPrompt")
-    if prompt then
-        local bal = prompt:FindFirstChild("BalanceText", true)
-        if bal then bal.Text = tostring(_G.ROBUX_AMMOUNT) end
+local function LoadSettings()
+    if readfile and isfile and isfile(FILE_NAME) then
+        local success, result = pcall(function()
+            local decoded = HttpService:JSONDecode(readfile(FILE_NAME))
+            _G.ROBUX_AMMOUNT = decoded.Robux
+            _G.FAKE_NAME = decoded.Name
+            _G.FAKE_ROLE = decoded.Role
+            _G.ROLE_COLORBG = Color3.new(decoded.Color.R, decoded.Color.G, decoded.Color.B)
+            _G.RAINBOW_ENABLED = decoded.Rainbow
+        end)
     end
 end
 
 -- ==========================================
--- DRAG LOGIC
+-- CORE FUNCTIONS
 -- ==========================================
+function _G.UpdateFakeDonation()
+    local char = LocalPlayer.Character or workspace:FindFirstChild(LocalPlayer.Name)
+    if char and char:FindFirstChild("Head") and char.Head:FindFirstChild("HeadTag") then
+        local tag = char.Head.HeadTag
+        if tag:FindFirstChild("Display") then tag.Display.Text = _G.FAKE_NAME end
+        if tag:FindFirstChild("Role") then 
+            tag.Role.Text = _G.FAKE_ROLE
+            if not _G.RAINBOW_ENABLED then tag.Role.BackgroundColor3 = _G.ROLE_COLORBG end
+        end
+    end
+    local p = LocalPlayer.PlayerGui:FindFirstChild("CustomBuyPrompt")
+    if p then
+        local b = p:FindFirstChild("BalanceText", true)
+        if b then b.Text = tostring(_G.ROBUX_AMMOUNT) end
+    end
+end
+
+-- Drag Logic
 local function makeDraggable(gui)
     local dragging, dragInput, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -512,120 +544,108 @@ end
 -- UI CONSTRUCTION
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MBH_Final_UI"
+ScreenGui.Name = "MBH_Memory_Edition"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 340, 0, 440)
-Main.Position = UDim2.new(0.5, -170, 0.5, -220)
+Main.Size = UDim2.new(0, 360, 0, 520)
+Main.Position = UDim2.new(0.5, -180, 0.5, -260)
 Main.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
-Main.BorderSizePixel = 0
 Main.Visible = false
 Main.Parent = ScreenGui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 15)
 makeDraggable(Main)
 
--- Header
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 55)
-Header.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 15)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 20, 0, 0)
-Title.Text = "MBH PREMIUM"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 22
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 40, 0, 40)
-CloseBtn.Position = UDim2.new(1, -45, 0, 7)
-CloseBtn.Text = "X"
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.TextSize = 20
-CloseBtn.Parent = Header
-CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
-
--- Container
-local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -40, 1, -85)
-Container.Position = UDim2.new(0, 20, 0, 75)
-Container.BackgroundTransparency = 1
-Container.ScrollBarThickness = 0
-Container.Parent = Main
-Instance.new("UIListLayout", Container).Padding = UDim.new(0, 15)
-
--- Input Function
-local function createInput(label, default)
-    local holder = Instance.new("Frame")
-    holder.Size = UDim2.new(1, 0, 0, 70)
-    holder.BackgroundTransparency = 1
-    holder.Parent = Container
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Text = label:upper()
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 12
-    lbl.TextColor3 = Color3.fromRGB(120, 120, 130)
-    lbl.Size = UDim2.new(1, 0, 0, 20)
-    lbl.BackgroundTransparency = 1
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = holder
-
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, 0, 0, 45)
-    box.Position = UDim2.new(0, 0, 0, 25)
-    box.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    box.Text = default
-    box.TextColor3 = Color3.new(1, 1, 1)
-    box.Font = Enum.Font.GothamMedium
-    box.TextSize = 18
-    box.Parent = holder
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 10)
-    return box
-end
-
-local robuxIn = createInput("Robux Balance", tostring(_G.ROBUX_AMMOUNT))
-local nameIn = createInput("Display Name", _G.FAKE_NAME)
-local roleIn = createInput("Role Label Text", _G.FAKE_ROLE)
-local colorIn = createInput("Color (RGB or Keyword)", "gold")
-
--- Apply Button
-local Apply = Instance.new("TextButton")
-Apply.Size = UDim2.new(1, 0, 0, 55)
-Apply.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-Apply.Text = "APPLY SETTINGS"
-Apply.Font = Enum.Font.GothamBold
-Apply.TextColor3 = Color3.new(1, 1, 1)
-Apply.TextSize = 20
-Apply.Parent = Container
-Instance.new("UICorner", Apply).CornerRadius = UDim.new(0, 10)
-
--- Floating Toggle
 local Toggle = Instance.new("TextButton")
 Toggle.Size = UDim2.new(0, 65, 0, 65)
-Toggle.Position = UDim2.new(0, 30, 0.8, 0)
+Toggle.Position = UDim2.new(0, 50, 0, 50)
 Toggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
 Toggle.Text = "MBH"
 Toggle.Font = Enum.Font.GothamBold
 Toggle.TextColor3 = Color3.new(1, 1, 1)
-Toggle.TextSize = 18
 Toggle.Parent = ScreenGui
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1, 0)
+makeDraggable(Toggle)
+
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -40, 1, -80)
+Container.Position = UDim2.new(0, 20, 0, 70)
+Container.BackgroundTransparency = 1
+Container.ScrollBarThickness = 0
+Container.Parent = Main
+local Layout = Instance.new("UIListLayout", Container)
+Layout.Padding = UDim.new(0, 12)
+
+-- Load existing settings before building inputs
+LoadSettings()
+
+local function createInput(label, default)
+    local l = Instance.new("TextLabel")
+    l.Text = label:upper()
+    l.Font = Enum.Font.GothamBold
+    l.TextColor3 = Color3.fromRGB(100, 100, 120)
+    l.Size = UDim2.new(1, 0, 0, 15)
+    l.BackgroundTransparency = 1
+    l.Parent = Container
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, 0, 0, 40)
+    box.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    box.Text = tostring(default)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    box.Font = Enum.Font.GothamMedium
+    box.Parent = Container
+    Instance.new("UICorner", box)
+    return box
+end
+
+local robuxIn = createInput("Robux", _G.ROBUX_AMMOUNT)
+local nameIn = createInput("Username", _G.FAKE_NAME)
+local roleIn = createInput("Role Text", _G.FAKE_ROLE)
+local colorIn = createInput("Color", "gold")
+
+-- Preset Logic
+local function addPreset(name, color, role, user)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 35)
+    b.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    b.Text = "PRESET: "..name
+    b.TextColor3 = Color3.new(0.9, 0.9, 0.9)
+    b.Font = Enum.Font.GothamBold
+    b.Parent = Container
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function()
+        _G.RAINBOW_ENABLED = false
+        _G.ROLE_COLORBG = color
+        _G.FAKE_ROLE = role
+        _G.FAKE_NAME = user
+        _G.UpdateFakeDonation()
+        SaveSettings()
+    end)
+end
+
+addPreset("HAZ3MN", Colors.orange, "Developer", "haz3mn")
+
+local Apply = Instance.new("TextButton")
+Apply.Size = UDim2.new(1, 0, 0, 50)
+Apply.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+Apply.Text = "APPLY & SAVE"
+Apply.Font = Enum.Font.GothamBold
+Apply.TextColor3 = Color3.new(1, 1, 1)
+Apply.Parent = Container
+Instance.new("UICorner", Apply)
 
 -- ==========================================
--- BUTTON CONNECTIONS
+-- ACTIONS
 -- ==========================================
 Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.F5 then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
 
 Apply.MouseButton1Click:Connect(function()
     _G.ROBUX_AMMOUNT = tonumber(robuxIn.Text) or _G.ROBUX_AMMOUNT
@@ -633,24 +653,36 @@ Apply.MouseButton1Click:Connect(function()
     _G.FAKE_ROLE = roleIn.Text
     
     local inputColor = colorIn.Text:lower():gsub("%s+", "")
-    if Colors[inputColor] then
+    if Colors[inputColor] then 
         _G.ROLE_COLORBG = Colors[inputColor]
-    else
-        local r, g, b = inputColor:match("(%d+),(%d+),(%d+)")
-        if r then _G.ROLE_COLORBG = Color3.fromRGB(r, g, b) end
+    else 
+        local r,g,b = inputColor:match("(%d+),(%d+),(%d+)") 
+        if r then _G.ROLE_COLORBG = Color3.fromRGB(r,g,b) end 
     end
     
     _G.UpdateFakeDonation()
-
-    Apply.Text = "✓ SAVED"
-    Apply.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+    SaveSettings()
+    
+    Apply.Text = "✓ SETTINGS SAVED"
     task.wait(1)
-    Apply.Text = "APPLY SETTINGS"
-    Apply.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    Apply.Text = "APPLY & SAVE"
 end)
 
--- Initial execution
+-- Rainbow Rendering
+RunService.RenderStepped:Connect(function()
+    if _G.RAINBOW_ENABLED then
+        local char = LocalPlayer.Character
+        local role = char and char:FindFirstChild("Head") and char.Head:FindFirstChild("HeadTag") and char.Head.HeadTag:FindFirstChild("Role")
+        if role then role.BackgroundColor3 = Color3.fromHSV(tick()%5/5, 1, 1) end
+    end
+end)
+
+-- Initial Load
 _G.UpdateFakeDonation()
+
+
+
+
 
 
 local Players = game: GetService("Players")
