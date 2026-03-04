@@ -424,15 +424,6 @@
 
 
 
---[[
-    @prometheus-config {
-        "Virtualize": true,
-        "EncryptStrings": true,
-        "Compress": true,
-        "AntiTamper": true
-    }
-]]
-
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -444,12 +435,15 @@ local LocalPlayer = Players.LocalPlayer
 -- GLOBALS & DATA SAVING
 -- ==========================================
 _G.ROBUX_AMMOUNT = 14383822
-_G.FAKE_NAME = "filteredasync"
-_G.FAKE_ROLE = "TOP 22"
+_G.FAKE_NAME = "Insert Fake User "
+_G.FAKE_ROLE = "Insert Fake Role"
 _G.ROLE_COLORBG = Color3.fromRGB(235, 235, 0)
+_G.ROLE_COLORTXT = Color3.fromRGB(255, 255, 255)
+_G.VERIFIED_TICK = false
 _G.RAINBOW_ENABLED = false
 
-local FILE_NAME = "MBH_Final_Data.json"
+local FILE_NAME = "SCRIPTEDREALITY.json"
+local CHECKMARK = " " -- The special character
 
 local Colors = {
     ["red"] = Color3.fromRGB(255, 50, 50),
@@ -459,16 +453,16 @@ local Colors = {
     ["orange"] = Color3.fromRGB(255, 120, 0),
     ["gold"] = Color3.fromRGB(235, 235, 0),
     ["white"] = Color3.fromRGB(255, 255, 255),
+    ["black"] = Color3.fromRGB(10, 10, 10),
     ["cyan"] = Color3.fromRGB(0, 255, 255)
 }
 
 local function SaveSettings()
     local data = {
-        Robux = _G.ROBUX_AMMOUNT,
-        Name = _G.FAKE_NAME,
-        Role = _G.FAKE_ROLE,
-        Color = {R = _G.ROLE_COLORBG.R, G = _G.ROLE_COLORBG.G, B = _G.ROLE_COLORBG.B},
-        Rainbow = _G.RAINBOW_ENABLED
+        Robux = _G.ROBUX_AMMOUNT, Name = _G.FAKE_NAME, Role = _G.FAKE_ROLE,
+        CBG = {R = _G.ROLE_COLORBG.R, G = _G.ROLE_COLORBG.G, B = _G.ROLE_COLORBG.B},
+        CTX = {R = _G.ROLE_COLORTXT.R, G = _G.ROLE_COLORTXT.G, B = _G.ROLE_COLORTXT.B},
+        Tick = _G.VERIFIED_TICK, Rain = _G.RAINBOW_ENABLED
     }
     if writefile then writefile(FILE_NAME, HttpService:JSONEncode(data)) end
 end
@@ -477,11 +471,10 @@ local function LoadSettings()
     if readfile and isfile and isfile(FILE_NAME) then
         pcall(function()
             local d = HttpService:JSONDecode(readfile(FILE_NAME))
-            _G.ROBUX_AMMOUNT = d.Robux
-            _G.FAKE_NAME = d.Name
-            _G.FAKE_ROLE = d.Role
-            _G.ROLE_COLORBG = Color3.new(d.Color.R, d.Color.G, d.Color.B)
-            _G.RAINBOW_ENABLED = d.Rainbow
+            _G.ROBUX_AMMOUNT, _G.FAKE_NAME, _G.FAKE_ROLE = d.Robux, d.Name, d.Role
+            _G.ROLE_COLORBG = Color3.new(d.CBG.R, d.CBG.G, d.CBG.B)
+            _G.ROLE_COLORTXT = Color3.new(d.CTX.R, d.CTX.G, d.CTX.B)
+            _G.VERIFIED_TICK, _G.RAINBOW_ENABLED = d.Tick, d.Rain
         end)
     end
 end
@@ -493,12 +486,16 @@ function _G.UpdateFakeDonation()
     local char = LocalPlayer.Character or workspace:FindFirstChild(LocalPlayer.Name)
     if char and char:FindFirstChild("Head") and char.Head:FindFirstChild("HeadTag") then
         local tag = char.Head.HeadTag
-        if tag:FindFirstChild("Display") then tag.Display.Text = _G.FAKE_NAME end
+        if tag:FindFirstChild("Display") then 
+            tag.Display.Text = (_G.VERIFIED_TICK and CHECKMARK or "") .. _G.FAKE_NAME 
+        end
         if tag:FindFirstChild("Role") then 
             tag.Role.Text = _G.FAKE_ROLE
+            tag.Role.TextColor3 = _G.ROLE_COLORTXT
             if not _G.RAINBOW_ENABLED then tag.Role.BackgroundColor3 = _G.ROLE_COLORBG end
         end
     end
+    -- Robux UI Update
     local p = LocalPlayer.PlayerGui:FindFirstChild("CustomBuyPrompt")
     if p and p:FindFirstChild("BalanceText", true) then
         p:FindFirstChild("BalanceText", true).Text = tostring(_G.ROBUX_AMMOUNT)
@@ -510,9 +507,7 @@ local function makeDraggable(gui)
     local dragging, dragInput, dragStart, startPos
     gui.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = gui.Position
+            dragging = true; dragStart = input.Position; startPos = gui.Position
         end
     end)
     UIS.InputChanged:Connect(function(input)
@@ -521,141 +516,110 @@ local function makeDraggable(gui)
             gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
+    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 end
 
 -- ==========================================
--- UI CONSTRUCTION (PROFESSIONAL DARK)
+-- UI CONSTRUCTION
 -- ==========================================
-LoadSettings() -- Load data before UI builds
+LoadSettings()
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MBH_Ultimate_Pro"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "MBH_Ultimate_V3"; ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui"); ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 360, 0, 550)
-Main.Position = UDim2.new(0.5, -180, 0.5, -275)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-Main.BorderSizePixel = 0
-Main.Visible = false
-Main.Parent = ScreenGui
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+Main.Size = UDim2.new(0, 380, 0, 600); Main.Position = UDim2.new(0.5, -190, 0.5, -300); Main.BackgroundColor3 = Color3.fromRGB(5, 5, 5); Main.Visible = false; Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 15)
 makeDraggable(Main)
 
 -- Header
 local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 60)
-Header.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Header.Parent = Main
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 12)
+Header.Size = UDim2.new(1, 0, 0, 70); Header.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Header.Parent = Main
+Instance.new("UICorner", Header)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 1, 0)
-Title.Position = UDim2.new(0, 20, 0, 0)
-Title.Text = "MBH PREMIUM"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 22
-Title.BackgroundTransparency = 1
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Header
+local Logo = Instance.new("TextLabel")
+Logo.Size = UDim2.new(1, 0, 1, 0); Logo.Text = "MBH PREMIUM"; Logo.TextSize = 30; Logo.Font = Enum.Font.GothamBold; Logo.TextColor3 = Color3.new(1,1,1); Logo.BackgroundTransparency = 1; Logo.Parent = Header
 
-local Close = Instance.new("TextButton")
-Close.Size = UDim2.new(0, 40, 0, 40)
-Close.Position = UDim2.new(1, -45, 0, 10)
-Close.Text = "X"; Close.TextColor3 = Color3.new(1,0,0); Close.BackgroundTransparency = 1; Close.TextSize = 20; Close.Parent = Header
-Close.MouseButton1Click:Connect(function() Main.Visible = false end)
-
--- Scrolling Container
+-- Container
 local Container = Instance.new("ScrollingFrame")
-Container.Size = UDim2.new(1, -40, 1, -80)
-Container.Position = UDim2.new(0, 20, 0, 75)
-Container.BackgroundTransparency = 1
-Container.ScrollBarThickness = 0
-Container.Parent = Main
+Container.Size = UDim2.new(1, -40, 1, -90); Container.Position = UDim2.new(0, 20, 0, 80); Container.BackgroundTransparency = 1; Container.ScrollBarThickness = 0; Container.Parent = Main
 Instance.new("UIListLayout", Container).Padding = UDim.new(0, 12)
 
--- Helper: Big Professional Input
+-- Input Helper
 local function createInput(label, default)
     local lbl = Instance.new("TextLabel")
-    lbl.Text = label:upper(); lbl.Font = Enum.Font.GothamBold; lbl.TextSize = 12; lbl.TextColor3 = Color3.fromRGB(100, 100, 110); lbl.Size = UDim2.new(1,0,0,15); lbl.BackgroundTransparency = 1; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = Container
-    
+    lbl.Text = label:upper(); lbl.Font = Enum.Font.GothamBold; lbl.TextSize = 12; lbl.TextColor3 = Color3.fromRGB(150, 150, 150); lbl.Size = UDim2.new(1,0,0,15); lbl.BackgroundTransparency = 1; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = Container
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, 0, 0, 45)
-    box.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    box.Text = tostring(default); box.TextColor3 = Color3.new(1, 1, 1); box.Font = Enum.Font.GothamMedium; box.TextSize = 18; box.Parent = Container
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+    box.Size = UDim2.new(1, 0, 0, 45); box.BackgroundColor3 = Color3.fromRGB(25, 25, 25); box.Text = tostring(default); box.TextColor3 = Color3.new(1,1,1); box.Font = Enum.Font.GothamMedium; box.TextSize = 18; box.Parent = Container
+    Instance.new("UICorner", box)
     return box
 end
 
-local robuxIn = createInput("Robux Balance", _G.ROBUX_AMMOUNT)
-local nameIn = createInput("Fake Name", _G.FAKE_NAME)
-local roleIn = createInput("Role Label", _G.FAKE_ROLE)
-local colorIn = createInput("Color (Keyword or RGB)", "gold")
+local robuxIn = createInput("Robux Amount", _G.ROBUX_AMMOUNT)
+local nameIn = createInput("Display Name", _G.FAKE_NAME)
+local roleIn = createInput("Role Text", _G.FAKE_ROLE)
+local colorBgIn = createInput("Role Background (Keyword/RGB)", "gold")
+local colorTxtIn = createInput("Role Text Color (Keyword/RGB)", "white")
 
--- Preset Button Helper
-local function addPreset(name, color, role, user)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1, 0, 0, 40); b.BackgroundColor3 = Color3.fromRGB(40, 40, 50); b.Text = "PRESET: "..name; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.GothamBold; b.Parent = Container
-    Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(function()
-        _G.RAINBOW_ENABLED = false; _G.ROLE_COLORBG = color; _G.FAKE_ROLE = role; _G.FAKE_NAME = user; _G.UpdateFakeDonation(); SaveSettings()
-        b.Text = "✓ LOADED"
-        task.wait(0.5)
-        b.Text = "PRESET: "..name
+-- Toggles (Verified & Rainbow)
+local function createToggle(text, startState, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 45); btn.BackgroundColor3 = startState and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(40, 40, 40); btn.Text = text; btn.Font = Enum.Font.GothamBold; btn.TextColor3 = Color3.new(1,1,1); btn.Parent = Container
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        local state = callback()
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(40, 40, 40)
     end)
+    return btn
 end
 
-addPreset("HAZ3MN", Colors.orange, "Developer", "haz3mn")
-
--- Rainbow Toggle
-local RainBtn = Instance.new("TextButton")
-RainBtn.Size = UDim2.new(1, 0, 0, 45); RainBtn.BackgroundColor3 = Color3.fromRGB(75, 0, 130); RainBtn.Text = "RAINBOW ROLE: OFF"; RainBtn.TextColor3 = Color3.new(1,1,1); RainBtn.Font = Enum.Font.GothamBold; RainBtn.Parent = Container
-Instance.new("UICorner", RainBtn)
-RainBtn.MouseButton1Click:Connect(function()
-    _G.RAINBOW_ENABLED = not _G.RAINBOW_ENABLED
-    RainBtn.Text = _G.RAINBOW_ENABLED and "RAINBOW ROLE: ON" or "RAINBOW ROLE: OFF"
+createToggle("VERIFIED CHECKMARK", _G.VERIFIED_TICK, function() 
+    _G.VERIFIED_TICK = not _G.VERIFIED_TICK; return _G.VERIFIED_TICK 
 end)
 
--- Main Apply & Save
+createToggle("RAINBOW ROLE", _G.RAINBOW_ENABLED, function() 
+    _G.RAINBOW_ENABLED = not _G.RAINBOW_ENABLED; return _G.RAINBOW_ENABLED 
+end)
+
+-- Preset
+local HazBtn = Instance.new("TextButton")
+HazBtn.Size = UDim2.new(1,0,0,45); HazBtn.BackgroundColor3 = Color3.fromRGB(255, 120, 0); HazBtn.Text = "PRESET: HAZ3MN"; HazBtn.Font = Enum.Font.GothamBold; HazBtn.TextColor3 = Color3.new(1,1,1); HazBtn.Parent = Container
+Instance.new("UICorner", HazBtn)
+HazBtn.MouseButton1Click:Connect(function()
+    _G.ROBUX_AMMOUNT = 999999999; _G.FAKE_NAME = "haz3mn"; _G.FAKE_ROLE = "Developer"; _G.ROLE_COLORBG = Color3.fromRGB(255, 120, 0); _G.ROLE_COLORTXT = Color3.new(1,1,1); _G.VERIFIED_TICK = true; _G.RAINBOW_ENABLED = false
+    _G.UpdateFakeDonation(); SaveSettings()
+end)
+
+-- Final Apply
 local Apply = Instance.new("TextButton")
-Apply.Size = UDim2.new(1, 0, 0, 55); Apply.BackgroundColor3 = Color3.fromRGB(0, 120, 255); Apply.Text = "APPLY & SAVE SETTINGS"; Apply.TextColor3 = Color3.new(1, 1, 1); Apply.Font = Enum.Font.GothamBold; Apply.TextSize = 20; Apply.Parent = Container
+Apply.Size = UDim2.new(1, 0, 0, 60); Apply.BackgroundColor3 = Color3.fromRGB(0, 120, 255); Apply.Text = "APPLY & SAVE"; Apply.TextSize = 22; Apply.Font = Enum.Font.GothamBold; Apply.TextColor3 = Color3.new(1, 1, 1); Apply.Parent = Container
 Instance.new("UICorner", Apply)
 
 -- Moveable Toggle
 local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(0, 65, 0, 65); Toggle.Position = UDim2.new(0, 50, 0, 50); Toggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255); Toggle.Text = "MBH"; Toggle.Font = Enum.Font.GothamBold; Toggle.TextColor3 = Color3.new(1,1,1); Toggle.Parent = ScreenGui
-Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
-makeDraggable(Toggle)
+Toggle.Size = UDim2.new(0, 70, 0, 70); Toggle.Position = UDim2.new(0, 50, 0, 50); Toggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255); Toggle.Text = "MBH"; Toggle.Font = Enum.Font.GothamBold; Toggle.TextColor3 = Color3.new(1,1,1); Toggle.Parent = ScreenGui
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0); makeDraggable(Toggle)
 
 -- ==========================================
--- SCRIPT LOGIC
+-- ACTIONS
 -- ==========================================
-Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
-
-UIS.InputBegan:Connect(function(i, gpe)
-    if not gpe and i.KeyCode == Enum.KeyCode.F5 then ScreenGui.Enabled = not ScreenGui.Enabled end
-end)
+local function parseColor(input)
+    local c = input:lower():gsub("%s+", "")
+    if Colors[c] then return Colors[c] end
+    local r,g,b = c:match("(%d+),(%d+),(%d+)")
+    if r then return Color3.fromRGB(r,g,b) end
+    return nil
+end
 
 Apply.MouseButton1Click:Connect(function()
     _G.ROBUX_AMMOUNT = tonumber(robuxIn.Text) or _G.ROBUX_AMMOUNT
-    _G.FAKE_NAME = nameIn.Text
-    _G.FAKE_ROLE = roleIn.Text
-    local c = colorIn.Text:lower():gsub("%s+", "")
-    if Colors[c] then _G.ROLE_COLORBG = Colors[c] else
-        local r,g,b = c:match("(%d+),(%d+),(%d+)")
-        if r then _G.ROLE_COLORBG = Color3.fromRGB(r,g,b) end
-    end
-    _G.UpdateFakeDonation()
-    SaveSettings()
-    Apply.Text = "✓ SAVED TO MEMORY"
-    task.wait(1)
-    Apply.Text = "APPLY & SAVE SETTINGS"
+    _G.FAKE_NAME = nameIn.Text; _G.FAKE_ROLE = roleIn.Text
+    _G.ROLE_COLORBG = parseColor(colorBgIn.Text) or _G.ROLE_COLORBG
+    _G.ROLE_COLORTXT = parseColor(colorTxtIn.Text) or _G.ROLE_COLORTXT
+    _G.UpdateFakeDonation(); SaveSettings()
 end)
 
+Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+UIS.InputBegan:Connect(function(i, g) if not g and i.KeyCode == Enum.KeyCode.F5 then ScreenGui.Enabled = not ScreenGui.Enabled end end)
 RunService.RenderStepped:Connect(function()
     if _G.RAINBOW_ENABLED then
         local char = LocalPlayer.Character
@@ -667,6 +631,11 @@ end)
 _G.UpdateFakeDonation()
 
 
+
+
+
+
+-- main
 
 
 
