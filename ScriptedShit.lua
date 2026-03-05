@@ -2909,27 +2909,24 @@ end
 task.delay(0.8, function()
 	if not (amt and amt > 0) then return end
 
-	-- OFFLINE: show the "sent gift!" popup (this includes the sound inside your EnsureGiftPopupDupe)
-	if wasOffline and _G.ShowGiftPopupDupe then
-		_G.ShowGiftPopupDupe()
+		-- OFFLINE: show "sent gift!" popup ONLY
+	if wasOffline then
+	    if _G.ShowGiftPopupDupe then
+	        _G.ShowGiftPopupDupe()
+	    end
+	else
+	    -- ONLINE booth donation popup
+	    local amountText = formatWithCommas(amt)
+	    local userText = tostring(owner or "")
+	
+	    if userText == "" then
+	        userText = "@him"
+	    elseif not userText:match("^@") then
+	        userText = "@" .. userText
+	    end
+	
+	    showDonationToast(amountText, userText)
 	end
-
-	-- Decide username for the green toast
-	if wasOffline and (owner == nil or owner == "") then
-		owner = getOfflineOwnerUsername(playerGui) -- from the helper you added
-	end
-
-	local amountText = formatWithCommas(amt)
-	local userText = tostring(owner or "")
-
-	if userText == "" then
-		userText = "@offline"
-	elseif not userText:match("^@") then
-		userText = "@" .. userText
-	end
-
-	-- Show the same green popup for offline too
-	showDonationToast(amountText, userText)
 end)
 
 
