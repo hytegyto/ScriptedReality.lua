@@ -399,7 +399,7 @@ local function CreateCustomBuyPrompt(parent)
     -- =========================
     -- TUNING (easy edits)
     -- =========================
-	local ROBUX_AMMOUNT = 14383822
+	local ROBUX_AMMOUNT = 2847123643
     local ROBUX_ICON = "rbxassetid: //135557279290308"
     local OVERLAY_TARGET_TRANSPARENCY = 0.21
 	local FAKE_NAME = "filteredasync"
