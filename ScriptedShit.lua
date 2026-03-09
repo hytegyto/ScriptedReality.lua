@@ -602,7 +602,7 @@ local function CreateCustomBuyPrompt(parent)
     trySet(UIStroke,  "LineJoinMode",  enumValue(Enum.LineJoinMode,  0))
     trySet(UIStroke,  "StrokeSizingMode",  enumValue(Enum.StrokeSizingMode,  0))
     trySet(UIStroke,  "Thickness",  1)
-    trySet(UIStroke,  "Transparency",  0.849999998)
+    trySet(UIStroke,  "Transparency",  1)
     trySet(UIStroke,  "ZIndex",  1)
     trySet(UIStroke,  "DefinesCapabilities",  false)
 
@@ -1878,7 +1878,7 @@ end
                         -- TUNING (easy edits)
                         -- =========================
                         local ROBUX_ICON = "rbxassetid://135557279290308"
-                        local OVERLAY_TARGET_TRANSPARENCY = 0.21
+                        local OVERLAY_TARGET_TRANSPARENCY = 0.6
 
                         -- Reduced scale factor (was 1.33)
                         local SCALE = 1.0 -- No scaling (original size)
@@ -1898,13 +1898,13 @@ end
                         local BUTTON_CORNER_RADIUS = 6 -- Reduced from 8
                         
                         -- Fast fly-in (Panel / SuccessPanel)
-                        local FLY_IN_TIME = 0.08
+                        local FLY_IN_TIME = 0.2
                         local FLY_IN_OFFSET_PX = 20 -- Reduced from 26
                         local FLY_EASING_STYLE = Enum.EasingStyle.Quad
                         local FLY_EASING_DIR = Enum.EasingDirection.Out
                         
                         -- If true, script will NOT change Panel / Close / ItemNameText positioning.
-                        local USE_STUDIO_LAYOUT = true
+                        local USE_STUDIO_LAYOUT = false
                         
                         -- Buy button fill
                         local FILL_START_DELAY = 0.5
@@ -2412,7 +2412,7 @@ end
 
 
 			-- Option A (recommended): wrap like the real Roblox prompt
-			successText.TextWrapped = false
+			successText.TextWrapped = true
 			successText.TextTruncate = Enum.TextTruncate.AtEnd
 
 			-- Make the label span almost the full width of the panel
@@ -2613,7 +2613,7 @@ end
 						-- Prompt state
 						-- =========================
 						local currentPrice = 0
-						local currentBalance = 57
+						local currentBalance = 10000000
 						local currentItemName = ""
 						local currentOwnerUsername = ""
 						local currentIsOffline = false
@@ -3178,7 +3178,7 @@ end)
 					-- =========================================================
 					-- Prompt stripping (DESTROY) + optional placeholder
 					-- =========================================================
-					local KEEP_PROMPT_PLACEHOLDER = false -- set false if you truly want it gone
+					local KEEP_PROMPT_PLACEHOLDER = true -- set false if you truly want it gone
 					local DUMMY_ATTR = "__CustomPromptDummy"
 
 					local function stripScriptsUnder(root)
@@ -3419,7 +3419,7 @@ end)
 						end
 					end))
 
-					print("[BoothDetector+CustomBuyPrompt] Running (FINAL.rbxmx UI). Default prompts locked; custom UI + success + ONLINE donation toast + OFFLINE gift popup enabled.")
+					print("imagine not buying this from lazerokk")
 
                                -- FAKE USER BY HTEGITO --
 							   -- FAKE USER BY HTEGITO --
