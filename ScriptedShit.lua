@@ -1306,7 +1306,7 @@ local function CreateCustomBuyPrompt(parent)
 
     local CheckIcon = Instance.new("ImageLabel")
     CheckIcon.Name = "CheckIcon"
-    trySet(CheckIcon,  "Image",  "rbxassetid://16608184059")
+    trySet(CheckIcon,  "Image",  "rbxassetid://377245171")
     trySet(CheckIcon,  "ImageColor3",  Color3.new(1,  1,  1))
     trySet(CheckIcon,  "ImageRectOffset",  Vector2.new(0,  0))
     trySet(CheckIcon,  "ImageRectSize",  Vector2.new(0,  0))
